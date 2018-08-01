@@ -6,8 +6,6 @@ contract BitmaskRBAC is RBAC {
   event DisplayChanged(address indexed addr, string display);
 
   string public constant ROLE_ADMIN = "admin";
-  string public constant ROLE_PUBLISH = "publish";
-  string public constant ROLE_VALIDATE = "validate";
   // all users in users must have a displayName set (checkUserExists modifier)
   mapping(address => string) displayNames;
 
@@ -15,11 +13,12 @@ contract BitmaskRBAC is RBAC {
   // If, in future, we need a way to delete users/displayNames then we'll need to do that carefully to ensure consistency with the user roles. E.g. we could also check for a user name before every call to checkRole, or we could iterate through all the roles to make sure none are assigned before deleting a user.
 
   // TODO adapt this contract to allow for dynamically addable roles
-  string[3] public supportedRoles = [ROLE_ADMIN, ROLE_PUBLISH, ROLE_VALIDATE];
+  string[] public supportedRoles;
 
   constructor()
   public
   {
+    supportedRoles.push(ROLE_ADMIN);
     addRole(msg.sender, ROLE_ADMIN);
   }
   
@@ -49,32 +48,12 @@ contract BitmaskRBAC is RBAC {
     removeRole(admin, ROLE_ADMIN);
   }
 
-  function publishAddRole(address publisher)
+  function addUserRole(string _role)
   onlyAdmin
-  checkUserExists(publisher)
-  public {
-    addRole(publisher, ROLE_PUBLISH);
-  }
-
-  function publishRemoveRole(address publisher)
-  onlyAdmin
-  checkUserExists(publisher)
-  public {
-    removeRole(publisher, ROLE_PUBLISH);
-  }
-
-  function validateAddRole(address validator)
-  onlyAdmin
-  checkUserExists(validator)
-  public {
-    addRole(validator, ROLE_VALIDATE);
-  }
-
-  function validateRemoveRole(address validator)
-  onlyAdmin
-  checkUserExists(validator)
-  public {
-    removeRole(validator, ROLE_VALIDATE);
+  external {
+    require(supportedRoles.length < 256); // because we are storing these in a uint256
+    require((bytes)(_role).length > 0);
+    supportedRoles.push(_role);
   }
 
   function newUser(address _addr, string _display, uint _roles) external

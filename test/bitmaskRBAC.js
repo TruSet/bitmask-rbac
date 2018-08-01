@@ -19,6 +19,8 @@ contract('BitmaskRBAC', function (accounts) {
     rbac = await BitmaskRBAC.deployed()
     admin = accounts[0]
     await rbac.newUser(admin, 'Contract Creator', ADMIN | PUBLISH | VALIDATE)
+    await rbac.addUserRole("publish")
+    await rbac.addUserRole("validate")
 
     publisher = accounts[1]
     await rbac.newUser(publisher, 'TestPublisher1', PUBLISH)
@@ -30,6 +32,18 @@ contract('BitmaskRBAC', function (accounts) {
     await rbac.newUser(publisherValidator, 'TestPublisherValidator1', PUBLISH | VALIDATE)
 
     consumer = accounts[4]
+  })
+
+  it('allows you to add roles', async function () {
+    let newRBAC = await BitmaskRBAC.new()
+    await newRBAC.addUserRole('role1')
+    await newRBAC.addUserRole('role2')
+    await newRBAC.addUserRole('role3')
+
+    const supportedRolesCount = await newRBAC.getSupportedRolesCount()
+
+    // 4 including obligatory admin role
+    assert.equal(supportedRolesCount.toNumber(), 4, 'Add roles to rbac')
   })
 
   it('ensures only admins have admin role', async function () {
@@ -68,7 +82,7 @@ contract('BitmaskRBAC', function (accounts) {
     assert.equal(consumerResult, false, 'consumers cannot publish')
 
     // tests admin user
-    await rbac.publishAddRole(admin)
+    await rbac.setUserRoles(admin, ADMIN | PUBLISH)
     let adminResult = await rbac.hasRole(admin, "publish")
     assert.equal(adminResult, true, 'admins should be able to publish')
   })
@@ -91,6 +105,7 @@ contract('BitmaskRBAC', function (accounts) {
     assert.equal(consumerResult, false, 'consumer shouldnt be able to validate')
 
     // tests admin user
+    await rbac.setUserRoles(admin, ADMIN | PUBLISH | VALIDATE)
     let adminResult = await rbac.hasRole(admin, "validate")
     assert.equal(adminResult, true, 'admin should be able to validate')
   })
@@ -99,8 +114,8 @@ contract('BitmaskRBAC', function (accounts) {
     let changeableUser = accounts[5]
     await rbac.newUser(changeableUser, 'TestNode1', VALIDATE)
     await rbac.setUserDisplay(changeableUser, 'TestNode2')
-    await rbac.validateAddRole(validator, { from: admin })
-    await rbac.validateAddRole(changeableUser)
+    await rbac.setUserRoles(validator, VALIDATE)
+    await rbac.setUserRoles(changeableUser, VALIDATE)
 
     let roleResult = await rbac.hasRole(changeableUser, "validate")
     assert.equal(roleResult, true, 'Node role wasn\'t set correctly')
