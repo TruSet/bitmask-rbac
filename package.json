@@ -1,0 +1,41 @@
+{
+  "name": "bitmask-rbac",
+  "version": "0.0.1",
+  "description": "Solidity RBAC that manages user permissions for ethereum dApps",
+  "dependencies": {
+    "openzeppelin-solidity": "1.10.0"
+  },
+  "files": [
+    "contracts",
+    "test"
+  ],
+  "scripts": {
+    "test": "scripts/test.sh",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gtaschuk/bitmask-rbac.git"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "rbac",
+    "zeppelin"
+  ],
+  "author": "Greg Taschuk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gtaschuk/bitmask-rbac/issues"
+  },
+  "homepage": "https://github.com/gtaschuk/bitmask-rbac",
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "truffle": "^4.1.13"
+  }
+}
