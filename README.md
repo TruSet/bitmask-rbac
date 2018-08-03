@@ -1,6 +1,6 @@
 # bitmask-rbac
 
-An RBAC is a Role Based Access Control.  It controls access to functions by assigning role permissions to users - in this case to ethereum addresses - users or contracts
+A RBAC is a Role Based Access Control.  It controls access to functions by assigning role permissions to users - in this case to ethereum addresses - users or contracts
 
 This is a work in progress, adapted from the TruSet dApp.
 
