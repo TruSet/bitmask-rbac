@@ -1,6 +1,6 @@
 # bitmask-rbac
 
-An RBAC is a Role Based Access Control.  It controls access to functions by assigning role permissions to users - in this case to ethereum addresses.
+An RBAC is a Role Based Access Control.  It controls access to functions by assigning role permissions to users - in this case to ethereum addresses - users or contracts
 
 This is a work in progress, adapted from the TruSet dApp.
 
@@ -48,8 +48,6 @@ await rbac.newUser(admin, 'Contract Creator', ADMIN | PUBLISH | VALIDATE)
 
 ## TODO
 
-Generalize the RBAC to support other role types
-
-Allow an admin user to add roles
-
 Scope what roles a user can add/remove to their role(s)
+Investigate gas use when there are many (> 100) roles, and consider replacing openzeppelin rbac dependency with logic that uses bitmasks natively
+Prevent duplicate roles
