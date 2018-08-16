@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:10.0
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          - v1-dependencies- # fallback to using the latest cache
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+  test-contracts:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:10.0
+      - image: gtaschuk/testrpc
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          - v1-dependencies- # fallback to using the latest cache
+      - run: sudo npm install -g truffle
+      - run: truffle test --network test
+  lint-contracts:
+    docker:
+      - image: circleci/node:10.0
+    steps:
+      - checkout
+      - run: npm install solium
+      - run:
+          name: Solidity Linter
+          command: npm run lint:sol
+workflows:
+  version: 2
+  lint_and_test:
+    jobs:
+      - build
+      - lint-contracts:
+          requires:
+            - build
+      - test-contracts:
+          requires:
+            - build

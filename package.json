@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "test": "scripts/test.sh",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:sol": "solium -d ./contracts"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,7 @@
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
+    "solium": "^1.1.8",
     "truffle": "^4.1.13"
   }
 }
