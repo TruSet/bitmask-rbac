@@ -56,6 +56,24 @@ contract BitmaskRBAC is RBAC {
     supportedRoles.push(_role);
   }
 
+  function grantRole(address user, string roleName)
+  onlyAdmin
+  checkUserExists(user)
+  public {
+    if (!hasRole(user, roleName)) {
+      addRole(user, roleName);
+    }
+  }
+
+  function revokeRole(address user, string roleName)
+  onlyAdmin
+  checkUserExists(user)
+  public {
+    if (hasRole(user, roleName)) {
+      removeRole(user, roleName);
+    }
+  }
+
   function newUser(address _addr, string _display, uint _roles) external
   onlyAdmin
   {

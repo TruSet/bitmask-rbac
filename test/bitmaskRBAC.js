@@ -68,7 +68,7 @@ contract('BitmaskRBAC', function (accounts) {
     assert.equal(adminResult, true, 'canAdmin should return true for admin')
   })
 
-  it('checks that roles can be set correctly', async function () {
+  it('checks that roles can be set correctly in aggregate', async function () {
     // tests publisher
     let publisherResult = await rbac.hasRole(publisher, "publish")
     assert.equal(publisherResult, true, 'hasRole should return true for publishers')
@@ -85,6 +85,16 @@ contract('BitmaskRBAC', function (accounts) {
     await rbac.setUserRoles(admin, ADMIN | PUBLISH)
     let adminResult = await rbac.hasRole(admin, "publish")
     assert.equal(adminResult, true, 'admins should be able to publish')
+  })
+
+  it('checks that roles can be granted and revoked', async function () {
+    await rbac.grantRole(publisher, "validate")
+    let result = await rbac.hasRole(publisher, "validate")
+    assert.equal(result, true, 'the role was not granted')
+
+    await rbac.revokeRole(publisher, "validate")
+    result = await rbac.hasRole(publisher, "validate")
+    assert.equal(result, false, 'the role was not revoked')
   })
 
   it('checks validate roles for various user accounts', async function () {
