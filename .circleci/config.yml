@@ -8,8 +8,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          - v1-dependencies- # fallback to using the latest cache
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies- # fallback to using the latest cache
       - run: npm install
       - save_cache:
           paths:
@@ -19,13 +19,14 @@ jobs:
     working_directory: ~/repo
     docker:
       - image: circleci/node:10.0
-      - image: gtaschuk/testrpc
+      - image: trufflesuite/ganache-cli:latest
+        command: --gasLimit 18000000
     steps:
       - checkout
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          - v1-dependencies- # fallback to using the latest cache
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies- # fallback to using the latest cache
       - run: sudo npm install -g truffle
       - run: truffle test --network test
   lint-contracts:
