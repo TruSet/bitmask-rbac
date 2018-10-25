@@ -20,7 +20,7 @@ contract('BitmaskRBAC', function(accounts) {
   let publisherValidator = accounts[3]
   let consumer = accounts[4]
 
-  it('allows you to add roles', async function() {
+  it('allows adding roles', async function() {
     rbac = await BitmaskRBAC.new()
     await rbac.addUserRole('role1')
     await rbac.addUserRole('role2')
@@ -31,7 +31,12 @@ contract('BitmaskRBAC', function(accounts) {
     assert.equal(supportedRolesCount.toNumber(), 4, 'Add roles to rbac')
   })
 
-  it('forbids you to re-add existing roles', async function() {
+  it('forbids deleting last admin', async function() {
+    rbac = await BitmaskRBAC.new()
+    await utils.assertRevert(rbac.revokeRole(rbac_admin, 'rbac_admin'))
+  })
+
+  it('forbids re-adding existing roles', async function() {
     rbac = await BitmaskRBAC.new()
     await rbac.addUserRole('role1')
     await utils.assertRevert(rbac.addUserRole('role1'))
@@ -44,6 +49,117 @@ contract('BitmaskRBAC', function(accounts) {
 
   it('forbids setting roles using out-of-bounds bitmask', async function() {
     await utils.assertRevert(rbac.setUserRoles(publisher, 10))
+  })
+
+  it('allows granting and revoking roles', async function() {
+    rbac = await BitmaskRBAC.new()
+    await rbac.addUserRole('role1')
+    await rbac.addUserRole('role2')
+
+    let roleResult = await rbac.hasRole(rbac_admin, 'rbac_admin')
+    assert.equal(roleResult, true, 'rbac_admin')
+    roleResult = await rbac.hasRole(rbac_admin, 'role1')
+    assert.equal(roleResult, false, 'role1')
+    roleResult = await rbac.hasRole(rbac_admin, 'role2')
+    assert.equal(roleResult, false, 'role2')
+
+    await rbac.grantRole(rbac_admin, 'role1')
+    await rbac.grantRole(rbac_admin, 'role2')
+
+    roleResult = await rbac.hasRole(rbac_admin, 'rbac_admin')
+    assert.equal(roleResult, true, 'rbac_admin')
+    roleResult = await rbac.hasRole(rbac_admin, 'role1')
+    assert.equal(roleResult, true, 'role1')
+    roleResult = await rbac.hasRole(rbac_admin, 'role2')
+    assert.equal(roleResult, true, 'role2')
+
+    await rbac.revokeRole(rbac_admin, 'role1')
+
+    roleResult = await rbac.hasRole(rbac_admin, 'rbac_admin')
+    assert.equal(roleResult, true, 'rbac_admin')
+    roleResult = await rbac.hasRole(rbac_admin, 'role1')
+    assert.equal(roleResult, false, 'role1')
+    roleResult = await rbac.hasRole(rbac_admin, 'role2')
+    assert.equal(roleResult, true, 'role2')
+  })
+
+  it('tracks user counts for each role', async function() {
+    rbac = await BitmaskRBAC.new()
+    await rbac.addUserRole('role1')
+    await rbac.addUserRole('role2')
+
+    let count = await rbac.getUserCountByRole('rbac_admin')
+    assert.equal(count.toNumber(), 1, 'rbac_admin')
+
+    count = await rbac.getUserCountByRole('role1')
+    assert.equal(count.toNumber(), 0, 'role1')
+
+    await rbac.grantRole(rbac_admin, 'role1')
+    await rbac.grantRole(rbac_admin, 'role2')
+
+    count = await rbac.getUserCountByRole('rbac_admin')
+    assert.equal(count.toNumber(), 1, 'rbac_admin')
+
+    count = await rbac.getUserCountByRole('role1')
+    assert.equal(count.toNumber(), 1, 'role1')
+
+    count = await rbac.getUserCountByRole('role2')
+    assert.equal(count.toNumber(), 1, 'role2')
+
+    await rbac.revokeRole(rbac_admin, 'role1')
+
+    count = await rbac.getUserCountByRole('rbac_admin')
+    assert.equal(count.toNumber(), 1, 'rbac_admin')
+
+    count = await rbac.getUserCountByRole('role1')
+    assert.equal(count.toNumber(), 0, 'role1')
+
+    count = await rbac.getUserCountByRole('role2')
+    assert.equal(count.toNumber(), 1, 'role2')
+  })
+
+  it('allows setting multiple user roles using bitmask', async function() {
+    rbac = await BitmaskRBAC.new()
+    await rbac.addUserRole('role1')
+    await rbac.setUserRoles(rbac_admin, 3) // Both roles
+
+    let roleResult = await rbac.hasRole(rbac_admin, 'rbac_admin')
+    assert.equal(roleResult, true, 'is rbac_admin')
+    roleResult = await rbac.hasRole(rbac_admin, 'role1')
+    assert.equal(roleResult, true, 'is role1')
+  })
+
+  it('tracks user counts for each role (bitmask)', async function() {
+    rbac = await BitmaskRBAC.new()
+    await rbac.addUserRole('role1')
+
+    let count = await rbac.getUserCount()
+    assert.equal(count.toNumber(), 1, 'overall')
+
+    count = await rbac.getUserCountByRole('rbac_admin')
+    assert.equal(count.toNumber(), 1, 'rbac_admin')
+
+    count = await rbac.getUserCountByRole('role1')
+    assert.equal(count.toNumber(), 0, 'role1')
+
+    await rbac.setUserRoles(rbac_admin, 3) // Both roles
+    await rbac.newUser(publisher, 'TestPublisher1', 3) // Both roles
+
+    count = await rbac.getUserCountByRole('rbac_admin')
+    assert.equal(count.toNumber(), 2, 'rbac_admin')
+
+    count = await rbac.getUserCountByRole('role1')
+    assert.equal(count.toNumber(), 2, 'role1')
+
+    count = await rbac.getUserCount()
+    assert.equal(count.toNumber(), 2, 'overall')
+  })
+
+  it('forbids deleting last admin (bitmask)', async function() {
+    rbac = await BitmaskRBAC.new()
+    await rbac.addUserRole('role1')
+    await rbac.setUserRoles(rbac_admin, 3) // Both roles
+    await utils.assertRevert(rbac.setUserRoles(rbac_admin, 2)) // Not the admin role
   })
 
   describe('when {admin_rbac,publish,validate} roles exist', function() {
@@ -66,7 +182,7 @@ contract('BitmaskRBAC', function(accounts) {
       )
     })
 
-    it('allows you to add more roles', async function() {
+    it('allows adding more roles', async function() {
       let supportedRolesCount = await rbac.getSupportedRolesCount()
       assert.equal(
         supportedRolesCount.toNumber(),
@@ -236,7 +352,7 @@ contract('BitmaskRBAC', function(accounts) {
       // await utils.assertRevert(rbac.setUserRoles(publisher, 8))
     })
 
-    it('allows you to set user details all at once', async function() {
+    it('allows setting user details all at once', async function() {
       let changeableUser = accounts[7]
       await rbac.newUser(changeableUser, 'TestUser7', VALIDATE)
 
@@ -292,7 +408,7 @@ contract('BitmaskRBAC', function(accounts) {
       }
     })
 
-    it('allows you to add up to 256 roles and no more', async function() {
+    it('allows adding up to 256 roles and no more', async function() {
       let supportedRolesCount = await rbac.getSupportedRolesCount()
       assert.equal(
         supportedRolesCount.toNumber(),

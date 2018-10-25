@@ -44,7 +44,7 @@ contract MyContract is BitmaskRBACPermissionable{
 To create a new user, just specify the name (required) and bitmask of suitable roles:
 
 ```
-await rbac.newUser(admin, 'Contract Creator', ADMIN | PUBLISH | VALIDATE)
+await rbac.newUser(user_address, 'Contract Creator', ADMIN | PUBLISH | VALIDATE)
 ```
 
 ## Usage (Javascript)
@@ -53,6 +53,4 @@ Once you have imported your user roles into javascript (e.g. using drizzle), it 
 
 ## TODO
 
-- Ensure we cannot accidentally delete the last user with an `rbac_admin` role, or else the RBAC becomes fixed forever.
 - Consider replacing openzeppelin rbac dependency with logic that uses bitmasks natively
-  Prevent duplicate roles

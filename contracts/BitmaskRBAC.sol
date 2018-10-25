@@ -17,13 +17,14 @@ import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 */
 contract BitmaskRBAC is RBAC {
   event DisplayChanged(address indexed addr, string display);
+  // TODO: event for "new supported role"
 
   struct User {
     bool exists;
     string displayName;
   }
 
-  // This role is special. It is used to administer the RBAC itself.
+  // This role is special. It is used to administer the RBAC itself. There is always at least one user with this role.
   string public constant ROLE_RBAC_ADMIN = "rbac_admin";
 
   // Users cannot be deleted, but their roles can be revoked. If/when we need a way to delete users,
@@ -36,6 +37,8 @@ contract BitmaskRBAC is RBAC {
   mapping(string => bool) supportedRoles;
   string[] public supportedRoleList;
 
+  mapping(string => uint) userCountsByRole;
+
   constructor()
   public
   {
@@ -44,6 +47,7 @@ contract BitmaskRBAC is RBAC {
     userList.push(msg.sender);
     User memory u =  User(true, "Contract creator");
     users[msg.sender] = u;
+    userCountsByRole[ROLE_RBAC_ADMIN]++;
     addRole(msg.sender, ROLE_RBAC_ADMIN);
   }
   
@@ -51,6 +55,12 @@ contract BitmaskRBAC is RBAC {
   {
     checkRole(msg.sender, ROLE_RBAC_ADMIN);
     _;
+  }
+
+  modifier doesNotDeleteLastAdmin()
+  {
+    _;
+    require(userCountsByRole[ROLE_RBAC_ADMIN] > 0);
   }
 
   modifier checkUserExists(address user)
@@ -73,6 +83,10 @@ contract BitmaskRBAC is RBAC {
     return supportedRoles[role];
   }
 
+  function getUserCountByRole(string _role) view public returns (uint) {
+    return userCountsByRole[_role];
+  }
+
   function addUserRole(string _role)
   onlyRbacAdmin
   external {
@@ -89,6 +103,7 @@ contract BitmaskRBAC is RBAC {
   checkRoleExists(roleName)
   public {
     if (!hasRole(user, roleName)) {
+      userCountsByRole[roleName]++;
       addRole(user, roleName);
     }
   }
@@ -113,10 +128,12 @@ contract BitmaskRBAC is RBAC {
 
   function revokeRole(address user, string roleName)
   onlyRbacAdmin
+  doesNotDeleteLastAdmin
   checkUserExists(user)
   checkRoleExists(roleName)
   public {
     if (hasRole(user, roleName)) {
+      userCountsByRole[roleName]--;
       removeRole(user, roleName);
     }
   }
@@ -163,6 +180,7 @@ contract BitmaskRBAC is RBAC {
 
   function setUserRoles(address _addr, uint _newBitmask)
   onlyRbacAdmin
+  doesNotDeleteLastAdmin
   checkUserExists(_addr)
   public returns (uint) {
     uint numRoles = supportedRoleList.length;
@@ -176,9 +194,11 @@ contract BitmaskRBAC is RBAC {
       bool shouldHaveRole = (_newBitmask & 2**i) > 0;
       if (shouldUpdate) {
         if (shouldHaveRole) {
+          userCountsByRole[supportedRoleList[i]]++;
           addRole(_addr, supportedRoleList[i]);
         }
         if (!shouldHaveRole) {
+          userCountsByRole[supportedRoleList[i]]--;
           removeRole(_addr, supportedRoleList[i]);
         }
       }
