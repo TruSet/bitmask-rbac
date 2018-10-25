@@ -97,15 +97,20 @@ contract BitmaskRBAC is RBAC {
     supportedRoleList.push(_role);
   }
 
+  function _grantRoleIfNotGrantedNoChecks(address user, string roleName)
+  internal {
+    if (!hasRole(user, roleName)) {
+      userCountsByRole[roleName]++;
+      addRole(user, roleName);
+    }
+  }
+
   function grantRole(address user, string roleName)
   onlyRbacAdmin
   checkUserExists(user)
   checkRoleExists(roleName)
   public {
-    if (!hasRole(user, roleName)) {
-      userCountsByRole[roleName]++;
-      addRole(user, roleName);
-    }
+    _grantRoleIfNotGrantedNoChecks(user, roleName);
   }
 
   // We override the default hasRole implementation to insist that the role is one we know about. This
@@ -126,16 +131,21 @@ contract BitmaskRBAC is RBAC {
     return super.hasRole(_operator, _role);
   }
 
+  function _revokeRoleIfGrantedNoChecks(address user, string roleName)
+  internal {
+    if (hasRole(user, roleName)) {
+      userCountsByRole[roleName]--;
+      removeRole(user, roleName);
+    }
+  }
+
   function revokeRole(address user, string roleName)
   onlyRbacAdmin
   doesNotDeleteLastAdmin
   checkUserExists(user)
   checkRoleExists(roleName)
   public {
-    if (hasRole(user, roleName)) {
-      userCountsByRole[roleName]--;
-      removeRole(user, roleName);
-    }
+    _revokeRoleIfGrantedNoChecks(user, roleName);
   }
 
   function newUser(address _addr, string _display, uint _roles) external
@@ -186,21 +196,13 @@ contract BitmaskRBAC is RBAC {
     uint numRoles = supportedRoleList.length;
     uint maxMeaningfulBitMask = (2**numRoles) - 1;
     require(_newBitmask <= maxMeaningfulBitMask);
-    uint currentBitmask = getUserRoleBitmask(_addr);
-    uint differences = (currentBitmask ^ _newBitmask);
 
     for (uint i=0; i<numRoles; i++) {
-      bool shouldUpdate = (differences & 2**i) > 0;
       bool shouldHaveRole = (_newBitmask & 2**i) > 0;
-      if (shouldUpdate) {
-        if (shouldHaveRole) {
-          userCountsByRole[supportedRoleList[i]]++;
-          addRole(_addr, supportedRoleList[i]);
-        }
-        if (!shouldHaveRole) {
-          userCountsByRole[supportedRoleList[i]]--;
-          removeRole(_addr, supportedRoleList[i]);
-        }
+      if (shouldHaveRole) {
+        _grantRoleIfNotGrantedNoChecks(_addr, supportedRoleList[i]);
+      } else {
+        _revokeRoleIfGrantedNoChecks(_addr, supportedRoleList[i]);
       }
     }
     return _newBitmask;
