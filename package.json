@@ -1,6 +1,6 @@
 {
   "name": "bitmask-rbac",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "Solidity RBAC that manages user permissions for ethereum dApps",
   "dependencies": {
     "openzeppelin-solidity": "1.10.0"
@@ -24,13 +24,15 @@
     "rbac",
     "zeppelin"
   ],
-  "author": "Greg Taschuk",
+  "author": "Greg Taschuk <greg.taschuk@consensys.net> (https://github.com/gtaschuk) & Neil McLaren <neil.mclaren@consensys.net> (https://github.com/nmclrn)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/gtaschuk/bitmask-rbac/issues"
   },
   "homepage": "https://github.com/gtaschuk/bitmask-rbac",
   "devDependencies": {
+    "chai": "^4.2.0",
+    "eth-gas-reporter": "^0.1.12",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.13.0",

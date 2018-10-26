@@ -1,6 +1,6 @@
 module.exports = {
   networks: {
-    development: {
+    test: {
       host: 'localhost',
       port: 8545,
       network_id: '*', // eslint-disable-line camelcase
@@ -8,7 +8,16 @@ module.exports = {
     ganache: {
       host: 'localhost',
       port: 7545,
+      gas: 6700000,
+      gasPrice: 10000000,
       network_id: '*', // eslint-disable-line camelcase
+    },
+  },
+  mocha: {
+    reporter: 'eth-gas-reporter',
+    reporterOptions: {
+      currency: 'USD',
+      gasPrice: 10,
     },
   },
 }
