@@ -17,7 +17,9 @@ import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 */
 contract BitmaskRBAC is RBAC {
   event DisplayChanged(address indexed addr, string display);
-  // TODO: event for "new supported role"
+  event RoleBitmaskChanged(address indexed addr, uint newRoleBitmask);
+  event NewSupportedRole(string role, uint index);
+  event NewUser(address addr, string display, uint roleBitmask);
 
   struct User {
     bool exists;
@@ -43,6 +45,7 @@ contract BitmaskRBAC is RBAC {
   public
   {
     supportedRoles[ROLE_RBAC_ADMIN] = true;
+    emit NewSupportedRole(ROLE_RBAC_ADMIN, 0);
     supportedRoleList.push(ROLE_RBAC_ADMIN);
     userList.push(msg.sender);
     User memory u =  User(true, "Contract creator");
@@ -94,6 +97,7 @@ contract BitmaskRBAC is RBAC {
     require((bytes)(_role).length > 0);
     require(!roleExists(_role));
     supportedRoles[_role] = true;
+    emit NewSupportedRole(_role, supportedRoleList.length);
     supportedRoleList.push(_role);
   }
 
@@ -159,7 +163,7 @@ contract BitmaskRBAC is RBAC {
     u.exists = true;
     u.displayName = _display;
     users[_addr] = u;
-    emit DisplayChanged(_addr, _display);
+    emit NewUser(_addr, _display, _roles);
     setUserRoles(_addr, _roles);
   }
 
@@ -205,6 +209,7 @@ contract BitmaskRBAC is RBAC {
         _revokeRoleIfGrantedNoChecks(_addr, supportedRoleList[i]);
       }
     }
+    emit RoleBitmaskChanged(_addr, _newBitmask);
     return _newBitmask;
   }
 
