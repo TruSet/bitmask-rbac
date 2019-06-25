@@ -10,7 +10,7 @@
     "test"
   ],
   "scripts": {
-    "test": "scripts/test.sh",
+    "test": "truffle test",
     "lint": "eslint .",
     "lint:sol": "solium -d ./contracts"
   },
