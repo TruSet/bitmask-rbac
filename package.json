@@ -2,9 +2,7 @@
   "name": "bitmask-rbac",
   "version": "1.0.0",
   "description": "Solidity RBAC that manages user permissions for ethereum dApps",
-  "dependencies": {
-    "openzeppelin-solidity": "1.10.0"
-  },
+  "dependencies": {},
   "files": [
     "contracts",
     "test"

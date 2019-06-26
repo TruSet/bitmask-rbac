@@ -14,11 +14,13 @@ const MAX_UINT = new BigNumber(
 
 contract('BitmaskRBAC', function(accounts) {
   let rbac
-  let rbac_admin = accounts[0]
-  let publisher = accounts[1]
-  let validator = accounts[2]
-  let publisherValidator = accounts[3]
-  let consumer = accounts[4]
+  const [
+    rbac_admin,
+    publisher,
+    validator,
+    publisherValidator,
+    consumer
+  ] = accounts
 
   it('allows adding roles', async function() {
     rbac = await BitmaskRBAC.new()
