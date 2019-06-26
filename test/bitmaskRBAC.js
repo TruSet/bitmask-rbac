@@ -1,5 +1,5 @@
 const utils = require('./utils.js')
-const BigNumber = web3.BigNumber
+const BigNumber = web3.utils.BN
 
 /* eslint-disable */
 let BitmaskRBAC = artifacts.require('./BitmaskRBAC.sol')

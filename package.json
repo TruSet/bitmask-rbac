@@ -38,6 +38,6 @@
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
     "solium": "^1.1.8",
-    "truffle": "^4.1.13"
+    "truffle": "^5.0.7"
   }
 }
