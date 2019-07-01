@@ -142,8 +142,14 @@ contract('BitmaskRBAC', function(accounts) {
     count = await rbac.getUserCountByRole('role1')
     assert.equal(count.toNumber(), 0, 'role1')
 
+    let userList = await rbac.getUsers()
+    assert.deepEqual(userList, [rbac_admin])
+
     await rbac.setUserRoles(rbac_admin, 3) // Both roles
     await rbac.newUser(publisher, 'TestPublisher1', 3) // Both roles
+
+    userList = await rbac.getUsers()
+    assert.deepEqual(userList, [rbac_admin, publisher])
 
     count = await rbac.getUserCountByRole('rbac_admin')
     assert.equal(count.toNumber(), 2, 'rbac_admin')

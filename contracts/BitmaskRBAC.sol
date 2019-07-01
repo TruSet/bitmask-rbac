@@ -171,6 +171,10 @@ contract BitmaskRBAC is RBAC {
     return userList.length;
   }
 
+  function getUsers() view public returns (address[]) {
+    return userList;
+  }
+
   function getUserDisplay(address _addr) view public returns (string) {
     return users[_addr].displayName;
   }
