@@ -86,7 +86,7 @@ contract BitmaskRBAC {
 
   modifier checkRoleExists(string role)
   {
-    require(roleExists(role));
+    require(roleExists(role), "role does not exist");
     _;
   }
 
@@ -99,11 +99,8 @@ contract BitmaskRBAC {
   }
 
   function checkRole(address _operator, string _role)
-  checkRoleExists(_role)
   public view returns (bool) {
-    uint256 existingRoleBitmask = users[_operator].roleBitmask;
-    uint position = roleBitIndices[_role];
-    return existingRoleBitmask.hasBit(position);
+    require(hasRole(_operator, _role));
   }
 
   function addUserRole(string _role)

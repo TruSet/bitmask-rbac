@@ -33,6 +33,26 @@ contract('BitmaskRBAC', function(accounts) {
     assert.equal(supportedRolesCount.toNumber(), 4, 'Add roles to rbac')
   })
 
+  it('reverts if checkRole is called with a fake role', async () => {
+    rbac = await BitmaskRBAC.new()
+    let exists = await rbac.roleExists('fake_role')
+    await utils.assertRevert(rbac.checkRole(publisher, 'fake_role'))
+  })
+
+  it('checks if a user is an rbac admin', async () => {
+    rbac = await BitmaskRBAC.new()
+    let publisherIsAdmin = await rbac.hasRole(publisher, 'rbac_admin')
+    assert(!publisherIsAdmin, 'it should not identify the publisher as an admin')
+
+    let adminIsAdmin = await rbac.hasRole(rbac_admin, 'rbac_admin')
+    assert(adminIsAdmin, 'it should identify the admin as an admin')
+  })
+
+  it('allows adding roles', async function() {
+    rbac = await BitmaskRBAC.new()
+    await utils.assertRevert(rbac.addUserRole('god_mode', {from: publisher}))
+  })
+
   it('forbids deleting last admin', async function() {
     rbac = await BitmaskRBAC.new()
     await utils.assertRevert(rbac.revokeRole(rbac_admin, 'rbac_admin'))
