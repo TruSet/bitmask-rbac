@@ -151,13 +151,6 @@ contract BitmaskRBAC {
     return bitmask.hasBit(position);
   }
 
-  function removeRole(address _operator, string _roleName) internal {
-    uint256 bitmask = users[_operator].roleBitmask;
-    uint position = roleBitIndices[_roleName];
-    users[_operator].roleBitmask = bitmask.unsetBit(position);
-    emit RoleRemoved(_operator, _roleName);
-  }
-
   function revokeRole(address user, string roleName)
   onlyRbacAdmin
   doesNotDeleteLastAdmin
@@ -166,7 +159,11 @@ contract BitmaskRBAC {
   public {
     if (hasRole(user, roleName)) {
       userCountsByRole[roleName]--;
-      removeRole(user, roleName);
+
+      uint256 bitmask = users[user].roleBitmask;
+      uint position = roleBitIndices[roleName];
+      users[user].roleBitmask = bitmask.unsetBit(position);
+      emit RoleRemoved(user, roleName);
     }
   }
 
