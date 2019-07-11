@@ -6,6 +6,7 @@ let compilers = {
 }
 
 module.exports = {
+  plugins: ['truffle-security'],
   compilers,
   networks: {
     test: {
