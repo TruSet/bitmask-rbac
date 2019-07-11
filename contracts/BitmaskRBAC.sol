@@ -1,4 +1,4 @@
-pragma solidity ^0.4.22;
+pragma solidity 0.5.10;
 
 import "./Bitmask.sol";
 
@@ -84,26 +84,26 @@ contract BitmaskRBAC {
     return users[user].exists;
   }
 
-  modifier checkRoleExists(string role)
+  modifier checkRoleExists(string memory role)
   {
     require(roleExists(role), "role does not exist");
     _;
   }
 
-  function roleExists(string role) view public returns (bool) {
+  function roleExists(string memory role) view public returns (bool) {
     return supportedRoles[role];
   }
 
-  function getUserCountByRole(string _role) view public returns (uint) {
+  function getUserCountByRole(string memory _role) view public returns (uint) {
     return userCountsByRole[_role];
   }
 
-  function checkRole(address _operator, string _role)
+  function checkRole(address _operator, string memory _role)
   public view returns (bool) {
     require(hasRole(_operator, _role));
   }
 
-  function addUserRole(string _role)
+  function addUserRole(string calldata _role)
   onlyRbacAdmin
   external {
     uint numRoles = supportedRoleList.length;
@@ -116,7 +116,7 @@ contract BitmaskRBAC {
     roleBitIndices[_role] = numRoles;
   }
 
-  function grantRole(address user, string roleName)
+  function grantRole(address user, string memory roleName)
   onlyRbacAdmin
   checkUserExists(user)
   checkRoleExists(roleName)
@@ -140,7 +140,7 @@ contract BitmaskRBAC {
    * @param _role the name of the role
    * @return bool
    */
-  function hasRole(address _operator, string _role)
+  function hasRole(address _operator, string memory _role)
     view
     public
     checkRoleExists(_role)
@@ -151,7 +151,7 @@ contract BitmaskRBAC {
     return bitmask.hasBit(position);
   }
 
-  function revokeRole(address user, string roleName)
+  function revokeRole(address user, string memory roleName)
   onlyRbacAdmin
   doesNotDeleteLastAdmin
   checkUserExists(user)
@@ -167,7 +167,7 @@ contract BitmaskRBAC {
     }
   }
 
-  function newUser(address _addr, string _display, uint _roles) external
+  function newUser(address _addr, string calldata _display, uint _roles) external
   onlyRbacAdmin
   {
     require(_addr != address(0));
@@ -188,11 +188,11 @@ contract BitmaskRBAC {
     return userList.length;
   }
 
-  function getUsers() view public returns (address[]) {
+  function getUsers() view public returns (address[] memory) {
     return userList;
   }
 
-  function getUserDisplay(address _addr) view public returns (string) {
+  function getUserDisplay(address _addr) view public returns (string memory) {
     return users[_addr].displayName;
   }
 
@@ -231,7 +231,7 @@ contract BitmaskRBAC {
     return _newBitmask;
   }
 
-  function setUser(address _addr, string _display, uint _roles)
+  function setUser(address _addr, string memory _display, uint _roles)
   onlyRbacAdmin
   checkUserExists(_addr)
   public {
@@ -239,7 +239,7 @@ contract BitmaskRBAC {
     setUserRoles(_addr, _roles);
   }
 
-  function setUserDisplay(address _addr, string _display) public
+  function setUserDisplay(address _addr, string memory _display) public
   onlyRbacAdmin
   checkUserExists(_addr)
   {

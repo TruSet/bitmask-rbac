@@ -1,4 +1,4 @@
-pragma solidity ^0.4.22;
+pragma solidity 0.5.10;
 
 /**
 * @title Library implementing bitmask operations
