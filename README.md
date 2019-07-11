@@ -14,16 +14,24 @@ A user can be granted roles or have them revoked individually using `grantRole()
 
 It is anticipated that solidity contracts will inherit this bas contract to extend it with additional functionality and/or restrictions.
 
+## The power of the 'rbac_admin' role
+
+Any user with the 'rbac_admin' role must be _trusted_ by the system. They have the ability to arbitrarily change user roles, including their own, but they also have the ability to compromise the RBAC itself in multiple and not always obvious ways:
+
+ - they could remove the permissions of all other rbac_admins, leaving themselves in sole control of the contract
+ - they could add roles until there are 256 roles, at which point no more roles can ever be added (nor deleted) and any code that tries to add roles will fail
+ - they could add roles that have names that _look_ the same as existing role names, but which use different unicode characters. This approach would result in seemingly-identical roles with very different properties, and could be used to trick smart contract users or auditors into thinking the system does something it does not.
+
 ## Usage
 
 You can check a user's permission in the RBAC with function modifiers.
 
 ```
 contract BitmaskRBACPermissionable {
-  string public constant ROLE_ADMIN = "rbac_admin";
+  string public constant ROLE_RBAC_ADMIN = "rbac_admin";
 
   modifier onlyAdmin() {
-    require(rbac.hasRole(msg.sender, ROLE_ADMIN));
+    require(rbac.hasRole(msg.sender, ROLE_RBAC_ADMIN));
     _;
   }
 }
@@ -41,7 +49,7 @@ contract MyContract is BitmaskRBACPermissionable{
 }
 ```
 
-To create a new user, just specify the name (required) and bitmask of suitable roles:
+To create a new user, just specify the address, name (optional), and bitmask of the required roles:
 
 ```
 await rbac.newUser(user_address, 'Contract Creator', ADMIN | PUBLISH | VALIDATE)
@@ -50,5 +58,3 @@ await rbac.newUser(user_address, 'Contract Creator', ADMIN | PUBLISH | VALIDATE)
 ## Usage (Javascript)
 
 Once you have imported your user roles into javascript (e.g. using drizzle), it is super easy to define appropriate constants (e.g. `ADMIN = 1; PUBLISH = 2; VALIDATE = 4`) and then check whether a user bitmask allows a given role or roles. E.g. `(user.role & PUBLISH) !== 0` to check if a user can publish, or even `(user.role & (VALIDATE | ADMIN)) !== 0` to check if a user can Validate or Admin.
-
-## TODO
