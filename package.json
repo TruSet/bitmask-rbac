@@ -2,15 +2,13 @@
   "name": "bitmask-rbac",
   "version": "1.0.0",
   "description": "Solidity RBAC that manages user permissions for ethereum dApps",
-  "dependencies": {
-    "openzeppelin-solidity": "1.10.0"
-  },
+  "dependencies": {},
   "files": [
     "contracts",
     "test"
   ],
   "scripts": {
-    "test": "scripts/test.sh",
+    "test": "truffle test",
     "lint": "eslint .",
     "lint:sol": "solium -d ./contracts"
   },
@@ -40,6 +38,6 @@
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
     "solium": "^1.1.8",
-    "truffle": "^4.1.13"
+    "truffle": "^5.0.7"
   }
 }

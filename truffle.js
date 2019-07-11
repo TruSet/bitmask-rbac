@@ -1,4 +1,12 @@
+let compilers = {
+  solc: {
+    version: '0.4.25',
+    docker: false,
+  },
+}
+
 module.exports = {
+  compilers,
   networks: {
     test: {
       host: 'localhost',

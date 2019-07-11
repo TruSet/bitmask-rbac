@@ -1,13 +1,16 @@
 pragma solidity ^0.4.22;
 
-import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
+import "./Bitmask.sol";
 
 /**
 * @title Role-Based Access Control (RBAC) supporting bitmasks, for getting/setting multiple roles atomically
 * @author TruSet
-* @dev Enhance openzeppelin's RBAC to allow getting and setting of multiple roles in a single
+* @dev Use a bitmask to allow getting and setting of multiple roles in a single
 *      transaction, to maintain lists/counts of users and roles, and to store an optional display name
 *      for each user.
+*
+*      Originally based on an openzeppelin implementation, this implements a similar interface using bitmasks
+*      natively
 *
 *      A maximum of 256 roles are supported, and roles cannot be removed once added.
 * 
@@ -15,13 +18,15 @@ import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 *      helps us to alleviate concerns around "look-a-like" strings. (See
 *      https://github.com/OpenZeppelin/openzeppelin-solidity/issues/1090)
 */
-contract BitmaskRBAC is RBAC {
+contract BitmaskRBAC {
+  using Bitmask for uint256;
   event DisplayChanged(address indexed addr, string display);
   // TODO: event for "new supported role"
 
   struct User {
     bool exists;
     string displayName;
+    uint256 roleBitmask;
   }
 
   // This role is special. It is used to administer the RBAC itself. There is always at least one user with this role.
@@ -35,20 +40,26 @@ contract BitmaskRBAC is RBAC {
   address[] public userList;
 
   mapping(string => bool) supportedRoles;
+  mapping(string => uint) roleBitIndices;
   string[] public supportedRoleList;
 
   mapping(string => uint) userCountsByRole;
+  event RoleAdded(address addr, string roleName);
+  event RoleRemoved(address addr, string roleName);
 
   constructor()
   public
   {
     supportedRoles[ROLE_RBAC_ADMIN] = true;
     supportedRoleList.push(ROLE_RBAC_ADMIN);
+    roleBitIndices[ROLE_RBAC_ADMIN] = 0;
+
     userList.push(msg.sender);
-    User memory u =  User(true, "Contract creator");
+
+    User memory u =  User(true, "Contract creator", 2**0);
     users[msg.sender] = u;
     userCountsByRole[ROLE_RBAC_ADMIN]++;
-    addRole(msg.sender, ROLE_RBAC_ADMIN);
+    emit RoleAdded(msg.sender, ROLE_RBAC_ADMIN);
   }
   
   modifier onlyRbacAdmin()
@@ -75,7 +86,7 @@ contract BitmaskRBAC is RBAC {
 
   modifier checkRoleExists(string role)
   {
-    require(roleExists(role));
+    require(roleExists(role), "role does not exist");
     _;
   }
 
@@ -87,22 +98,22 @@ contract BitmaskRBAC is RBAC {
     return userCountsByRole[_role];
   }
 
+  function checkRole(address _operator, string _role)
+  public view returns (bool) {
+    require(hasRole(_operator, _role));
+  }
+
   function addUserRole(string _role)
   onlyRbacAdmin
   external {
-    require(supportedRoleList.length < 256); // because we use a uint256 as a bitmask
+    uint numRoles = supportedRoleList.length;
+    require(numRoles < 256); // because we use a uint256 as a bitmask
     require((bytes)(_role).length > 0);
     require(!roleExists(_role));
+
     supportedRoles[_role] = true;
     supportedRoleList.push(_role);
-  }
-
-  function _grantRoleIfNotGrantedNoChecks(address user, string roleName)
-  internal {
-    if (!hasRole(user, roleName)) {
-      userCountsByRole[roleName]++;
-      addRole(user, roleName);
-    }
+    roleBitIndices[_role] = numRoles;
   }
 
   function grantRole(address user, string roleName)
@@ -110,7 +121,14 @@ contract BitmaskRBAC is RBAC {
   checkUserExists(user)
   checkRoleExists(roleName)
   public {
-    _grantRoleIfNotGrantedNoChecks(user, roleName);
+    if (!hasRole(user, roleName)) {
+      userCountsByRole[roleName]++;
+
+      uint256 bitmask = users[user].roleBitmask;
+      uint position = roleBitIndices[roleName];
+      users[user].roleBitmask = bitmask.setBit(position);
+      emit RoleAdded(user, roleName);
+    }
   }
 
   // We override the default hasRole implementation to insist that the role is one we know about. This
@@ -128,15 +146,9 @@ contract BitmaskRBAC is RBAC {
     checkRoleExists(_role)
     returns (bool)
   {
-    return super.hasRole(_operator, _role);
-  }
-
-  function _revokeRoleIfGrantedNoChecks(address user, string roleName)
-  internal {
-    if (hasRole(user, roleName)) {
-      userCountsByRole[roleName]--;
-      removeRole(user, roleName);
-    }
+    uint256 bitmask = users[_operator].roleBitmask;
+    uint position = roleBitIndices[_role];
+    return bitmask.hasBit(position);
   }
 
   function revokeRole(address user, string roleName)
@@ -145,7 +157,14 @@ contract BitmaskRBAC is RBAC {
   checkUserExists(user)
   checkRoleExists(roleName)
   public {
-    _revokeRoleIfGrantedNoChecks(user, roleName);
+    if (hasRole(user, roleName)) {
+      userCountsByRole[roleName]--;
+
+      uint256 bitmask = users[user].roleBitmask;
+      uint position = roleBitIndices[roleName];
+      users[user].roleBitmask = bitmask.unsetBit(position);
+      emit RoleRemoved(user, roleName);
+    }
   }
 
   function newUser(address _addr, string _display, uint _roles) external
@@ -155,9 +174,7 @@ contract BitmaskRBAC is RBAC {
     require(!userExists(_addr));
 
     userList.push(_addr);
-    User memory u;
-    u.exists = true;
-    u.displayName = _display;
+    User memory u =  User(true, _display, 0);
     users[_addr] = u;
     emit DisplayChanged(_addr, _display);
     setUserRoles(_addr, _roles);
@@ -180,16 +197,7 @@ contract BitmaskRBAC is RBAC {
   }
 
   function getUserRoleBitmask(address _addr) view public returns (uint) {
-    uint numRoles = supportedRoleList.length;
-    uint roles = 0;
-
-    for (uint i=0; i<numRoles; i++) {
-      if (hasRole(_addr, supportedRoleList[i])) {
-        // TODO make use of bit shifting in constantinople
-        roles = roles + 2**i;
-      }
-    }
-    return roles;
+    return users[_addr].roleBitmask;
   }
 
   function setUserRoles(address _addr, uint _newBitmask)
@@ -200,15 +208,26 @@ contract BitmaskRBAC is RBAC {
     uint numRoles = supportedRoleList.length;
     uint maxMeaningfulBitMask = (2**numRoles) - 1;
     require(_newBitmask <= maxMeaningfulBitMask);
+    uint256 oldBitmask = users[_addr].roleBitmask;
 
+    // Set
+    users[_addr].roleBitmask = _newBitmask;
+
+    // Side effects
     for (uint i=0; i<numRoles; i++) {
-      bool shouldHaveRole = (_newBitmask & 2**i) > 0;
-      if (shouldHaveRole) {
-        _grantRoleIfNotGrantedNoChecks(_addr, supportedRoleList[i]);
-      } else {
-        _revokeRoleIfGrantedNoChecks(_addr, supportedRoleList[i]);
+      bool shouldHaveRole = _newBitmask.hasBit(i);
+      bool currentlyHasRole = oldBitmask.hasBit(i);
+      string memory roleName = supportedRoleList[i];
+
+      if (shouldHaveRole && !currentlyHasRole) {
+        userCountsByRole[roleName]++;
+        emit RoleAdded(_addr, roleName);
+      } else if (!shouldHaveRole && currentlyHasRole) {
+        userCountsByRole[roleName]--;
+        emit RoleRemoved(_addr, roleName);
       }
     }
+
     return _newBitmask;
   }
 

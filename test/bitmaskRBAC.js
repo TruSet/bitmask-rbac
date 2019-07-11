@@ -1,5 +1,5 @@
 const utils = require('./utils.js')
-const BigNumber = web3.BigNumber
+const BigNumber = web3.utils.BN
 
 /* eslint-disable */
 let BitmaskRBAC = artifacts.require('./BitmaskRBAC.sol')
@@ -14,11 +14,13 @@ const MAX_UINT = new BigNumber(
 
 contract('BitmaskRBAC', function(accounts) {
   let rbac
-  let rbac_admin = accounts[0]
-  let publisher = accounts[1]
-  let validator = accounts[2]
-  let publisherValidator = accounts[3]
-  let consumer = accounts[4]
+  const [
+    rbac_admin,
+    publisher,
+    validator,
+    publisherValidator,
+    consumer
+  ] = accounts
 
   it('allows adding roles', async function() {
     rbac = await BitmaskRBAC.new()
@@ -29,6 +31,26 @@ contract('BitmaskRBAC', function(accounts) {
     const supportedRolesCount = await rbac.getSupportedRolesCount()
     // 4 including obligatory rbac_admin role
     assert.equal(supportedRolesCount.toNumber(), 4, 'Add roles to rbac')
+  })
+
+  it('reverts if checkRole is called with a fake role', async () => {
+    rbac = await BitmaskRBAC.new()
+    let exists = await rbac.roleExists('fake_role')
+    await utils.assertRevert(rbac.checkRole(publisher, 'fake_role'))
+  })
+
+  it('checks if a user is an rbac admin', async () => {
+    rbac = await BitmaskRBAC.new()
+    let publisherIsAdmin = await rbac.hasRole(publisher, 'rbac_admin')
+    assert(!publisherIsAdmin, 'it should not identify the publisher as an admin')
+
+    let adminIsAdmin = await rbac.hasRole(rbac_admin, 'rbac_admin')
+    assert(adminIsAdmin, 'it should identify the admin as an admin')
+  })
+
+  it('allows adding roles', async function() {
+    rbac = await BitmaskRBAC.new()
+    await utils.assertRevert(rbac.addUserRole('god_mode', {from: publisher}))
   })
 
   it('forbids deleting last admin', async function() {

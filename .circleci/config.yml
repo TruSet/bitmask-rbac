@@ -20,7 +20,7 @@ jobs:
     docker:
       - image: circleci/node:10.0
       - image: trufflesuite/ganache-cli:latest
-        command: --gasLimit 18000000
+        command: --gasLimit 18000000 -a 20
     steps:
       - checkout
       - restore_cache:
