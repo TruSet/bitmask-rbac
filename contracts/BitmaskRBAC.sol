@@ -20,8 +20,11 @@ import "./Bitmask.sol";
 */
 contract BitmaskRBAC {
   using Bitmask for uint256;
+
   event DisplayChanged(address indexed addr, string display);
-  // TODO: event for "new supported role"
+  event RoleAdded(address addr, string roleName);
+  event RoleRemoved(address addr, string roleName);
+  event NewSupportedRole(string roleName);
 
   struct User {
     bool exists;
@@ -40,12 +43,10 @@ contract BitmaskRBAC {
   address[] public userList;
 
   mapping(string => bool) supportedRoles;
-  mapping(string => uint) roleBitIndices;
+  mapping(string => uint8) roleBitIndices;
   string[] public supportedRoleList;
 
   mapping(string => uint) userCountsByRole;
-  event RoleAdded(address addr, string roleName);
-  event RoleRemoved(address addr, string roleName);
 
   constructor()
   public
@@ -107,13 +108,14 @@ contract BitmaskRBAC {
   onlyRbacAdmin
   external {
     uint numRoles = supportedRoleList.length;
-    require(numRoles < 256); // because we use a uint256 as a bitmask
+    assert(numRoles < 256); // because we use a uint256 as a bitmask
     require((bytes)(_role).length > 0);
     require(!roleExists(_role));
 
     supportedRoles[_role] = true;
     supportedRoleList.push(_role);
-    roleBitIndices[_role] = numRoles;
+    roleBitIndices[_role] = uint8(numRoles);
+    emit NewSupportedRole(_role);
   }
 
   function grantRole(address user, string memory roleName)
@@ -125,8 +127,8 @@ contract BitmaskRBAC {
       userCountsByRole[roleName]++;
 
       uint256 bitmask = users[user].roleBitmask;
-      uint position = roleBitIndices[roleName];
-      users[user].roleBitmask = bitmask.setBit(position);
+      uint8 bitIndex = roleBitIndices[roleName];
+      users[user].roleBitmask = bitmask.setBit(bitIndex);
       emit RoleAdded(user, roleName);
     }
   }
@@ -147,8 +149,8 @@ contract BitmaskRBAC {
     returns (bool)
   {
     uint256 bitmask = users[_operator].roleBitmask;
-    uint position = roleBitIndices[_role];
-    return bitmask.hasBit(position);
+    uint8 bitIndex = roleBitIndices[_role];
+    return bitmask.hasBit(bitIndex);
   }
 
   function revokeRole(address user, string memory roleName)
@@ -161,8 +163,8 @@ contract BitmaskRBAC {
       userCountsByRole[roleName]--;
 
       uint256 bitmask = users[user].roleBitmask;
-      uint position = roleBitIndices[roleName];
-      users[user].roleBitmask = bitmask.unsetBit(position);
+      uint8 bitIndex = roleBitIndices[roleName];
+      users[user].roleBitmask = bitmask.unsetBit(bitIndex);
       emit RoleRemoved(user, roleName);
     }
   }
@@ -206,17 +208,21 @@ contract BitmaskRBAC {
   checkUserExists(_addr)
   public returns (uint) {
     uint numRoles = supportedRoleList.length;
-    uint maxMeaningfulBitMask = (2**numRoles) - 1;
-    require(_newBitmask <= maxMeaningfulBitMask);
+    assert(numRoles <= 256);
+    if (numRoles < 256) {
+      // Only need to check an upper bound if it's less than the max uint256 value
+      uint maxMeaningfulBitMask = (uint(1) << numRoles) - 1;
+      require(_newBitmask <= maxMeaningfulBitMask, "Bitmask value is too high");
+    }
     uint256 oldBitmask = users[_addr].roleBitmask;
 
     // Set
     users[_addr].roleBitmask = _newBitmask;
 
     // Side effects
-    for (uint i=0; i<numRoles; i++) {
-      bool shouldHaveRole = _newBitmask.hasBit(i);
-      bool currentlyHasRole = oldBitmask.hasBit(i);
+    for (uint i=0; i<numRoles; i++) { // Using a uint8 would overflow and never terminate if we have 256 roles (255++ yields 0) 
+      bool shouldHaveRole = _newBitmask.hasBit(uint8(i));
+      bool currentlyHasRole = oldBitmask.hasBit(uint8(i));
       string memory roleName = supportedRoleList[i];
 
       if (shouldHaveRole && !currentlyHasRole) {
