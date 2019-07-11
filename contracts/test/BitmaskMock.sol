@@ -1,28 +1,28 @@
-pragma solidity ^0.4.22;
+pragma solidity 0.5.10;
 
 import "../Bitmask.sol";
 
 contract BitmaskMock {
   using Bitmask for uint256;
 
-  uint256 public bitmask;
+  uint256 public bits;
 
   function reset() public returns (bool) {
-    bitmask = 0;
+    bits = 0;
     return true;
   }
 
-  function hasBit(uint position) public view returns (bool) {
-    return bitmask.hasBit(position);
+  function hasBit(uint8 bitIndex) public view returns (bool) {
+    return bits.hasBit(bitIndex);
   }
 
-  function setBit(uint position) public returns (uint256) {
-    bitmask = bitmask.setBit(position);
-    return bitmask;
+  function setBit(uint8 bitIndex) public returns (uint256) {
+    bits = bits.setBit(bitIndex);
+    return bits;
   }
 
-  function unsetBit(uint position) public returns (uint256) {
-    bitmask = bitmask.unsetBit(position);
-    return bitmask;
+  function unsetBit(uint8 bitIndex) public returns (uint256) {
+    bits = bits.unsetBit(bitIndex);
+    return bits;
   }
 }

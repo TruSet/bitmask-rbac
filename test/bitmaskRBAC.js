@@ -11,6 +11,10 @@ const VALIDATE = 1 << 2
 const MAX_UINT = new BigNumber(
   '115792089237316195423570985008687907853269984665640564039457584007913129639935'
 )
+const MAX_UINT128 = new BigNumber('340282366920938463463374607431768211455')
+const MAX_UINT255 = new BigNumber(
+  '57896044618658097711785492504343953926634992332820282019728792003956564819967'
+)
 
 contract('BitmaskRBAC', function(accounts) {
   let rbac
@@ -19,7 +23,7 @@ contract('BitmaskRBAC', function(accounts) {
     publisher,
     validator,
     publisherValidator,
-    consumer
+    consumer,
   ] = accounts
 
   it('allows adding roles', async function() {
@@ -42,7 +46,10 @@ contract('BitmaskRBAC', function(accounts) {
   it('checks if a user is an rbac admin', async () => {
     rbac = await BitmaskRBAC.new()
     let publisherIsAdmin = await rbac.hasRole(publisher, 'rbac_admin')
-    assert(!publisherIsAdmin, 'it should not identify the publisher as an admin')
+    assert(
+      !publisherIsAdmin,
+      'it should not identify the publisher as an admin'
+    )
 
     let adminIsAdmin = await rbac.hasRole(rbac_admin, 'rbac_admin')
     assert(adminIsAdmin, 'it should identify the admin as an admin')
@@ -50,7 +57,7 @@ contract('BitmaskRBAC', function(accounts) {
 
   it('allows adding roles', async function() {
     rbac = await BitmaskRBAC.new()
-    await utils.assertRevert(rbac.addUserRole('god_mode', {from: publisher}))
+    await utils.assertRevert(rbac.addUserRole('god_mode', { from: publisher }))
   })
 
   it('forbids deleting last admin', async function() {
@@ -460,6 +467,229 @@ contract('BitmaskRBAC', function(accounts) {
     })
   })
 
+  describe('when 128 roles exist', function() {
+    let startingRoleCount = 128
+    let manyRoledUser = accounts[8]
+    let manyRoledUserRoleBitmask =
+      Math.pow(2, 1) + Math.pow(2, 2) + Math.pow(2, 30) // (foo1 | foo2 | foo30)
+
+    before(async function() {
+      rbac = await BitmaskRBAC.new()
+
+      // Add our roles. Do this one at a time so that ordering/bitmasks are deterministic
+      let newRoleCount = startingRoleCount - 1 // Built-in rbac_admin role
+      for (let i = 1; i <= newRoleCount; i++) {
+        await rbac.addUserRole('foo' + i)
+      }
+    })
+
+    it('checks setting user roles en masse', async function() {
+      await rbac.newUser(manyRoledUser, 'Test Many Roled User', 1) // Starts as RBAC_ADMIN
+
+      await rbac.setUserRoles(manyRoledUser, manyRoledUserRoleBitmask)
+
+      let roleResult = await rbac.hasRole(manyRoledUser, 'rbac_admin')
+      assert.equal(roleResult, false, 'no longer an rbac_admin')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo1')
+      assert.equal(roleResult, true, 'is foo1')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo2')
+      assert.equal(roleResult, true, 'is foo2')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo3')
+      assert.equal(roleResult, false, 'is not foo3')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo4')
+      assert.equal(roleResult, false, 'is not foo4')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo29')
+      assert.equal(roleResult, false, 'is not foo29')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo30')
+      assert.equal(roleResult, true, 'is foo30')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo31')
+      assert.equal(roleResult, false, 'is not foo31')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo127')
+      assert.equal(roleResult, false, 'is not foo127')
+    })
+
+    it('preserves small bitmask value', async function() {
+      let returnedBitmask = await rbac.getUserRoleBitmask.call(manyRoledUser)
+      assert.equal(
+        returnedBitmask.toString(),
+        manyRoledUserRoleBitmask.toString(),
+        'bitmask preserved'
+      )
+
+      // We also send the transaction so that we measure and report gas usage
+      await rbac.getUserRoleBitmask(manyRoledUser)
+    })
+
+    // The following two tests use a lot of gas. We can configure a high gas limit locally, but
+    // until we do that properly in Circle CI (I have tried and failed) we'll skip this test during CI
+    it('allows setting max bitmask value', async function() {
+      let supportedRolesCount = await rbac.getSupportedRolesCount()
+      assert.equal(supportedRolesCount, 128, '128 roles in rbac')
+
+      await rbac.setUserRoles(manyRoledUser, MAX_UINT128)
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo1')
+      assert.equal(roleResult, true, 'is foo1')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo2')
+      assert.equal(roleResult, true, 'is foo2')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo3')
+      assert.equal(roleResult, true, 'is foo3')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo4')
+      assert.equal(roleResult, true, 'is foo4')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo29')
+      assert.equal(roleResult, true, 'is foo29')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo30')
+      assert.equal(roleResult, true, 'is foo30')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo31')
+      assert.equal(roleResult, true, 'is foo31')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo127')
+      assert.equal(roleResult, true, 'is foo127')
+    })
+
+    it('preserves large bitmask value', async function() {
+      let returnedBitmask = await rbac.getUserRoleBitmask.call(manyRoledUser)
+
+      assert.equal(
+        returnedBitmask.toString(),
+        MAX_UINT128.toString(),
+        'bitmask preserved (string)'
+      )
+
+      // We also send the transaction so that we measure and report gas usage
+      await rbac.getUserRoleBitmask(manyRoledUser)
+    })
+  })
+
+  describe('when 255 roles exist', function() {
+    let startingRoleCount = 255
+    let manyRoledUser = accounts[8]
+    let manyRoledUserRoleBitmask =
+      Math.pow(2, 1) + Math.pow(2, 2) + Math.pow(2, 30) // (foo1 | foo2 | foo30)
+
+    before(async function() {
+      rbac = await BitmaskRBAC.new()
+
+      // Add our roles. Do this one at a time so that ordering/bitmasks are deterministic
+      let newRoleCount = startingRoleCount - 1 // Built-in rbac_admin role
+      for (let i = 1; i <= newRoleCount; i++) {
+        await rbac.addUserRole('foo' + i)
+      }
+    })
+
+    it('checks setting user roles en masse', async function() {
+      await rbac.newUser(manyRoledUser, 'Test Many Roled User', 1) // Starts as RBAC_ADMIN
+
+      await rbac.setUserRoles(manyRoledUser, manyRoledUserRoleBitmask)
+
+      let roleResult = await rbac.hasRole(manyRoledUser, 'rbac_admin')
+      assert.equal(roleResult, false, 'no longer an rbac_admin')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo1')
+      assert.equal(roleResult, true, 'is foo1')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo2')
+      assert.equal(roleResult, true, 'is foo2')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo3')
+      assert.equal(roleResult, false, 'is not foo3')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo4')
+      assert.equal(roleResult, false, 'is not foo4')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo29')
+      assert.equal(roleResult, false, 'is not foo29')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo30')
+      assert.equal(roleResult, true, 'is foo30')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo31')
+      assert.equal(roleResult, false, 'is not foo31')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo254')
+      assert.equal(roleResult, false, 'is not foo254')
+    })
+
+    it('preserves small bitmask value', async function() {
+      let returnedBitmask = await rbac.getUserRoleBitmask.call(manyRoledUser)
+      assert.equal(
+        returnedBitmask,
+        manyRoledUserRoleBitmask,
+        'bitmask preserved'
+      )
+
+      // We also send the transaction so that we measure and report gas usage
+      await rbac.getUserRoleBitmask(manyRoledUser)
+    })
+
+    it('forbids setting max uint256 as bitmask value', async function() {
+      let supportedRolesCount = await rbac.getSupportedRolesCount()
+      assert.equal(supportedRolesCount, 255, '255 roles in rbac')
+
+      await utils.assertRevert(rbac.setUserRoles(manyRoledUser, MAX_UINT))
+    })
+
+    // The following two tests use a lot of gas. We can configure a high gas limit locally, but
+    // until we do that properly in Circle CI (I have tried and failed) we'll skip this test during CI
+    it('allows setting max "uint255" value as bitmask value', async function() {
+      let supportedRolesCount = await rbac.getSupportedRolesCount()
+      assert.equal(supportedRolesCount, 255, '255 roles in rbac')
+
+      await rbac.setUserRoles(manyRoledUser, MAX_UINT255)
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo1')
+      assert.equal(roleResult, true, 'is foo1')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo2')
+      assert.equal(roleResult, true, 'is foo2')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo3')
+      assert.equal(roleResult, true, 'is foo3')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo4')
+      assert.equal(roleResult, true, 'is foo4')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo29')
+      assert.equal(roleResult, true, 'is foo29')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo30')
+      assert.equal(roleResult, true, 'is foo30')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo31')
+      assert.equal(roleResult, true, 'is foo31')
+
+      roleResult = await rbac.hasRole(manyRoledUser, 'foo254')
+      assert.equal(roleResult, true, 'is foo254')
+    })
+
+    it('preserves large bitmask value', async function() {
+      let returnedBitmask = await rbac.getUserRoleBitmask.call(manyRoledUser)
+
+      assert.equal(
+        returnedBitmask.toString(),
+        MAX_UINT255.toString(),
+        'bitmask preserved (string)'
+      )
+
+      // We also send the transaction so that we measure and report gas usage
+      await rbac.getUserRoleBitmask(manyRoledUser)
+    })
+  })
+
   describe('when 256 roles exist', function() {
     let startingRoleCount = 256
     let manyRoledUser = accounts[8]
@@ -477,6 +707,8 @@ contract('BitmaskRBAC', function(accounts) {
     })
 
     it('checks setting user roles en masse', async function() {
+      assert.equal(await rbac.getSupportedRolesCount().valueOf(), 256)
+
       await rbac.newUser(manyRoledUser, 'Test Many Roled User', 1) // Starts as RBAC_ADMIN
 
       await rbac.setUserRoles(manyRoledUser, manyRoledUserRoleBitmask)
@@ -523,7 +755,7 @@ contract('BitmaskRBAC', function(accounts) {
 
     // The following two tests use a lot of gas. We can configure a high gas limit locally, but
     // until we do that properly in Circle CI (I have tried and failed) we'll skip this test during CI
-    it.skip('allows setting max bitmask value', async function() {
+    it('allows setting max bitmask value', async function() {
       let supportedRolesCount = await rbac.getSupportedRolesCount()
       assert.equal(supportedRolesCount, 256, '256 roles in rbac')
 
@@ -554,12 +786,12 @@ contract('BitmaskRBAC', function(accounts) {
       assert.equal(roleResult, true, 'is foo255')
     })
 
-    it.skip('preserves large bitmask value', async function() {
+    it('preserves large bitmask value', async function() {
       let returnedBitmask = await rbac.getUserRoleBitmask.call(manyRoledUser)
 
       assert.equal(
-        returnedBitmask.valueOf(),
-        MAX_UINT.valueOf(),
+        returnedBitmask.toString(),
+        MAX_UINT.toString(),
         'bitmask preserved (string)'
       )
 
