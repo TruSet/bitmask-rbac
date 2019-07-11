@@ -1,6 +1,6 @@
 {
   "name": "bitmask-rbac",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Solidity RBAC that manages user permissions for ethereum dApps",
   "dependencies": {},
   "files": [
