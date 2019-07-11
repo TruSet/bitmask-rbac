@@ -72,12 +72,12 @@ contract BitmaskRBAC {
   modifier doesNotDeleteLastAdmin()
   {
     _;
-    require(userCountsByRole[ROLE_RBAC_ADMIN] > 0);
+    require(userCountsByRole[ROLE_RBAC_ADMIN] > 0, "Cannot delete last admin. Create dummy 0x00..00 admin if no admins are required.");
   }
 
   modifier checkUserExists(address user)
   {
-    require(userExists(user));
+    require(userExists(user), "User does not exist");
     _;
   }
 
@@ -87,7 +87,7 @@ contract BitmaskRBAC {
 
   modifier checkRoleExists(string memory role)
   {
-    require(roleExists(role), "role does not exist");
+    require(roleExists(role), "Role does not exist");
     _;
   }
 
@@ -101,16 +101,16 @@ contract BitmaskRBAC {
 
   function checkRole(address _operator, string memory _role)
   public view returns (bool) {
-    require(hasRole(_operator, _role));
+    require(hasRole(_operator, _role), "User does not have required role");
   }
 
   function addUserRole(string calldata _role)
   onlyRbacAdmin
   external {
     uint numRoles = supportedRoleList.length;
-    assert(numRoles < 256); // because we use a uint256 as a bitmask
-    require((bytes)(_role).length > 0);
-    require(!roleExists(_role));
+    require(numRoles < 256, "Cannot add more than 256 roles"); // because we use a uint256 as a bitmask
+    require((bytes)(_role).length > 0, "Role must be non-empty");
+    require(!roleExists(_role), "Role already exists");
 
     supportedRoles[_role] = true;
     supportedRoleList.push(_role);
@@ -172,8 +172,8 @@ contract BitmaskRBAC {
   function newUser(address _addr, string calldata _display, uint _roles) external
   onlyRbacAdmin
   {
-    require(_addr != address(0));
-    require(!userExists(_addr));
+    require(_addr != address(0), "Invalid address");
+    require(!userExists(_addr), "User already exists");
 
     userList.push(_addr);
     User memory u =  User(true, _display, 0);
