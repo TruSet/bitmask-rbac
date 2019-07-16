@@ -100,7 +100,7 @@ contract BitmaskRBAC {
   }
 
   function checkRole(address _operator, string memory _role)
-  public view returns (bool) {
+  public view {
     require(hasRole(_operator, _role), "User does not have required role");
   }
 
