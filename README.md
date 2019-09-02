@@ -12,7 +12,7 @@ A user can be granted roles or have them revoked individually using `grantRole()
 - users with a role bitmask of `011 (3)` would be able to publish and validate, but not admin
 - users with a role bitmask of `001 (1)` are only able to validate
 
-It is anticipated that solidity contracts will inherit this bas contract to extend it with additional functionality and/or restrictions.
+It is anticipated that solidity contracts will inherit this base contract to extend it with additional functionality and/or restrictions.
 
 ## The power of the 'rbac_admin' role
 

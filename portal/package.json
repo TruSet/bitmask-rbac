@@ -1,0 +1,50 @@
+{
+  "name": "bitmask-rbac-portal",
+  "version": "2.0.0",
+  "description": "Portal for editing user permissions",
+  "dependencies": {
+    "aphrodite": "^2.2.1",
+    "moment": "^2.10.3",
+    "ethereum-identicon": "0.0.4",
+    "react": "^16.4.2",
+    "react-particles-js": "^2.1.0",
+    "redux": "^4.0.0",
+    "redux-freeze": "^0.1.5",
+    "redux-persist": "^5.10.0",
+    "redux-thunk": "^2.3.0",
+    "react-redux": "^5.0.7",
+    "react-router-dom": "^4.3.1",
+    "web3": "1.0.0-beta.55",
+    "web3-eth": "1.0.0-beta.55",
+    "@material-ui/core": "^3.1.0",
+    "@material-ui/icons": "^3.0.1"
+  },
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint .",
+    "start": "react-scripts start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gtaschuk/bitmask-rbac.git"
+  },
+  "keywords": [
+    "ethereum",
+    "rbac"
+  ],
+  "author": "Greg Taschuk <greg.taschuk@consensys.net> (https://github.com/gtaschuk)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/truset/bitmask-rbac/issues"
+  },
+  "homepage": "https://github.com/truset/bitmask-rbac",
+  "devDependencies": {
+    "react-scripts": "^2.1.8"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
