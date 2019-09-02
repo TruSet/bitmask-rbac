@@ -5,6 +5,7 @@
 
 # dependencies
 /node_modules
+/portal/node_modules
 
 # testing
 /coverage
