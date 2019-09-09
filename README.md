@@ -1,5 +1,7 @@
 # bitmask-rbac
 
+[CODE](https://github.com/TruSet/bitmask-rbac)
+
 RBAC stands for Role Based Access Control. This solidity contract can be used to control access to Ethereum smart contracts and their functions, by assigning roles to users and having functions require certain roles.
 
 This means you can limit which users (or contracts) are able to call contract functions and easily manage the provisioning ond deprovisioning of these roles.  This was designed for the TruSet dApp, wherin users can be given roles like the ability to create new data records, publish data, validate data, and perform admin functions.
@@ -86,4 +88,4 @@ const canAdminOrValidate = (user.role & (VALIDATE | ADMIN)) !== 0 // true
 ```
 
 ## About
-bitmask-rbac was created by @gtaschuk and @nmclrn for use in the [TruSet](TruSet.com) app, a [Consensys](Consensys.net) spoke.
+bitmask-rbac was created by @gtaschuk and @nmclrn for use in the [TruSet](https://TruSet.com) app, a [Consensys](https://consensys.net) spoke.
