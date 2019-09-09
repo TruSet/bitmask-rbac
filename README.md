@@ -6,9 +6,9 @@ This means you can limit which users (or contracts) are able to call contract fu
 
 ## Use - react app interface
 The easiest way to interact with the RBAC is via our react app interface.
-Take a look at https://truset.github.io/bitmask-rbac/portal/ 
+Take a look at [our react app interface](https://truset.github.io/bitmask-rbac/portal/)
 
-## Use - smort contract functions
+## Use - smart contract interface
 
 ### Managing the available roles
 This implementation provides only one role to start with: `rbac_admin`, which is given to the user who deploys the contract. Other roles can be added up to a maximum of 256 by calling `addUserRole()` as the `rbac_admin`. Once added, roles can never be removed.
@@ -86,4 +86,4 @@ const canAdminOrValidate = (user.role & (VALIDATE | ADMIN)) !== 0 // true
 ```
 
 ## About
-bitmask-rbac was created by @gtaschuk and @nmclrn for use in the TruSet.com app, a Consensys.net spoke.
+bitmask-rbac was created by @gtaschuk and @nmclrn for use in the [TruSet](TruSet.com) app, a [Consensys](Consensys.net) spoke.
