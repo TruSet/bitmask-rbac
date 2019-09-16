@@ -1,11 +1,17 @@
+interface UserParameters {
+  address: string,
+    display: string,
+    roles: number
+}
+
 export const setUser = (
-  { nodeAddress, display, roles },
-  transactionHashCallback
+  { address, display, roles } : UserParameters,
+  transactionHashCallback : any
 ) => ({
   metamaskClientFunction: 'setUser',
   metamaskClientFunctionArgs: [
     {
-      nodeAddress,
+      address,
       display,
       roles,
     },
@@ -15,8 +21,8 @@ export const setUser = (
 })
 
 export const createUser = (
-  { address, display, roles },
-  transactionHashCallback
+  { address, display, roles } : UserParameters,
+  transactionHashCallback : any
 ) => ({
   metamaskClientFunction: 'createUser',
   metamaskClientFunctionArgs: [{ address, display, roles }],

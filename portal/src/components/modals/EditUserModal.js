@@ -73,7 +73,7 @@ class EditNodeModal extends Component {
     let roles = composeBitmask(this.state.roleNumbers)
     this.props.setUser(
       {
-        nodeAddress: this.props.node.address,
+        address: this.props.node.address,
         display: this.state.nodeDisplay,
         roles,
       },

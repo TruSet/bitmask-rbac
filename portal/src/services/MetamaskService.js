@@ -26,9 +26,9 @@ class MetamaskService extends EthereumClient {
       .send(this.transactionOpts)
   }
 
-  setUser({ nodeAddress, display, roles }) {
+  setUser({ address, display, roles }) {
     return this.rbac.methods
-      .setUser(nodeAddress, display, roles)
+      .setUser(address, display, roles)
       .send(this.transactionOpts)
   }
 }

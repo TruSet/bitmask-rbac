@@ -1,21 +1,17 @@
 import _ from 'lodash'
+import { RESET_PERSISTED_STATE, SET_DISPLAY, USERS_INITIAL_LOAD, FETCHING_USERS, TOKEN_TRANSFER_RECEIVED, ROLE_ADDED, ROLE_REMOVED, User, UsersState, UserRegistryState, UsersActionTypes } from './types/users'
 import { numberForRoleString } from '../services/UserService'
+import { Action } from 'redux'
+import { ThunkAction } from 'redux-thunk'
+import { AppState } from './types/store'
 
-export const RESET_PERSISTED_STATE = 'RESET_PERSISTED_STATE'
-export const SET_DISPLAY = 'SET_DISPLAY'
-export const USERS_INITIAL_LOAD = 'USERS_INITIAL_LOAD'
-export const FETCHING_USERS = 'FETCHING_USERS'
-export const TOKEN_TRANSFER_RECEIVED = 'TOKEN_TRANSFER_RECEIVED'
-export const ROLE_ADDED = 'ROLE_ADDED'
-export const ROLE_REMOVED = 'ROLE_REMOVED'
-
-export const initialState = {
+export const initialState: UsersState = {
   initialized: false,
   registry: {},
   users_fetching: false,
 }
 
-export default (state = initialState, action) => {
+export default (state = initialState, action: UsersActionTypes) => {
   if (!action) {
     return state
   }
@@ -41,25 +37,30 @@ export default (state = initialState, action) => {
   }
 }
 
-const registry = (state = {}, action) => {
-  const address = action.address
+const initialUserRegistryState: UserRegistryState = {}
+
+const registry = (state = initialUserRegistryState, action: UsersActionTypes) => {
+  let address
   switch (action.type) {
     case USERS_INITIAL_LOAD:
-      let newUsers = {}
+      let newUsers: UserRegistryState = {}
       _.each(action.users, user => {
         newUsers[user.address] = user
       })
       return { ...state, ...newUsers }
     case ROLE_ADDED:
-      let updatedUser = { ...state[address] }
+      address = action.address
+      let updatedUser: User = { ...state[address] }
       updatedUser.role = updatedUser.role | action.role
       return { ...state, [address]: updatedUser }
     case ROLE_REMOVED:
-      let roleRemovedUser = { ...state[address] }
+      address = action.address
+      let roleRemovedUser : User = { ...state[address] }
       if ((roleRemovedUser.role & action.role) === 0) return state // if user doesn't have role
       roleRemovedUser.role = roleRemovedUser.role - action.role
       return { ...state, [address]: roleRemovedUser }
     case SET_DISPLAY:
+      address = action.address
       let renamedUser = state[address]
         ? { ...state[address] }
         : { address: action.address, role: 0, display: '', balance: 0 }
@@ -70,35 +71,35 @@ const registry = (state = {}, action) => {
   }
 }
 
-export const usersInitialLoad = ethereumClient => {
+export const usersInitialLoad = (ethereumClient : any): ThunkAction<void, AppState, null, Action<string>>  => {
   return dispatch => {
     dispatch({
       type: FETCHING_USERS,
     })
 
-    ethereumClient.userCount().then(userCount => {
+    ethereumClient.userCount().then((userCount: number )=> {
       ethereumClient
         .getUsers({ startIndex: 0, count: userCount })
-        .then(users => {
+        .then((users: User[] ) => {
           dispatch({ type: USERS_INITIAL_LOAD, users })
         })
-        .catch(error => {
+        .catch((error : any) => {
           console.error('Error fetching users', error)
         })
     })
   }
 }
 
-export const setDisplay = (address, display) => {
+export const setDisplay = (address: string, display: string) => {
   return { address, display, type: SET_DISPLAY }
 }
 
-export const roleAdded = (address, roleName) => {
+export const roleAdded = (address: string, roleName: string) => {
   let role = numberForRoleString(roleName)
   return { address, role, type: ROLE_ADDED }
 }
 
-export const roleRemoved = (address, roleName) => {
+export const roleRemoved = (address: string, roleName: string) => {
   let role = numberForRoleString(roleName)
   return { address, role, type: ROLE_REMOVED }
 }
