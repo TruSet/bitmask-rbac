@@ -1,4 +1,4 @@
-[![Passing](https://circleci.com/gh/TruSet/bitmask-rbac.svg?style=svg)](https://circleci.com/gh/TruSet/bitmask-rbac/master)
+[![Passing](https://circleci.com/gh/TruSet/bitmask-rbac.svg?style=svg)](https://circleci.com/gh/TruSet/bitmask-rbac)
 
 [CODE](https://github.com/TruSet/bitmask-rbac)
 
