@@ -1,3 +1,5 @@
+[![Passing](https://circleci.com/gh/TruSet/bitmask-rbac.svg?style=svg)](https://circleci.com/gh/TruSet/bitmask-rbac/master)
+
 [CODE](https://github.com/TruSet/bitmask-rbac)
 
 RBAC stands for Role Based Access Control. This solidity contract can be used to control access to Ethereum smart contracts and their functions, by assigning roles to users and having functions require certain roles.
