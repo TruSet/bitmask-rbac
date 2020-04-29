@@ -15,6 +15,21 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
+  build-react:
+    docker:
+      - image: circleci/node:10.0
+    working_directory: ~/repo/portal
+    steps:
+      - checkout:
+        - path: ~/repo
+      - restore_cache:
+          keys:
+            - v1-dependencies-react-{{ checksum "package.json" }}
+      - run: cd portal && npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-react-{{ checksum "package.json" }}
   test-contracts:
     working_directory: ~/repo
     docker:
@@ -29,6 +44,18 @@ jobs:
             - v1-dependencies- # fallback to using the latest cache
       - run: sudo npm install -g truffle
       - run: truffle test --network test
+  test-react:
+    docker:
+      - image: circleci/node:10.0
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            - v1-dependencies-react-{{ checksum "portal/package.json" }}
+      - run: "cd portal && npm install --only=dev"
+      - run: "npm run test-portal"
   lint-contracts:
     docker:
       - image: circleci/node:10.0
@@ -43,9 +70,13 @@ workflows:
   lint_and_test:
     jobs:
       - build
+      - build-react
       - lint-contracts:
           requires:
             - build
       - test-contracts:
           requires:
             - build
+      - test-react:
+          requires:
+            - build-react
