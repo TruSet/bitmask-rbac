@@ -36,7 +36,7 @@
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
-    "eth-gas-reporter": "^0.1.12",
+    "eth-gas-reporter": "^0.2.1",
     "solium": "^1.2.4",
     "truffle": "^5.0.35"
   }
