@@ -4,7 +4,7 @@
   "description": "Portal for editing user permissions",
   "dependencies": {
     "aphrodite": "^2.2.1",
-    "moment": "^2.10.3",
+    "moment": "^2.29.2",
     "ethereum-identicon": "0.0.4",
     "react": "^16.4.2",
     "react-particles-js": "^2.1.0",
