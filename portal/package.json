@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/truset/bitmask-rbac",
   "devDependencies": {
-    "react-scripts": "^2.1.8"
+    "react-scripts": "^5.0.1"
   },
   "browserslist": [
     ">0.2%",
